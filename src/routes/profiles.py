@@ -1,7 +1,10 @@
 from fastapi import APIRouter, status, Form, Depends, HTTPException
+from fastapi import File
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
+from typing import Annotated
+
 from config import get_jwt_auth_manager, get_s3_storage_client
 from exceptions import BaseSecurityError, S3FileUploadError
 from schemas.profiles import ProfileResponseSchema, ProfileCreateRequestSchema
@@ -20,7 +23,7 @@ router = APIRouter()
 )
 async def create_profile(
     user_id: int,
-    profile_data: ProfileCreateRequestSchema = Form(),
+    profile_data: Annotated[ProfileCreateRequestSchema, Form()],
     db: AsyncSession = Depends(get_db),
     token: str = Depends(get_token),
     jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
@@ -35,6 +38,7 @@ async def create_profile(
         jwt_manager (JWTAuthManagerInterface): JWT manager for decoding tokens.
         db (AsyncSession): The asynchronous database session.
         s3_client (S3StorageInterface): The asynchronous S3 storage client.
+        data: for working with image
     Returns:
         ProfileResponseSchema: The created user profile details.
     """
@@ -46,10 +50,11 @@ async def create_profile(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e)
         )
-    stmt_user = await db.execute(select(UserModel)
-                                 .where(UserModel.id == user_id)
-                                 .options(joinedload(UserModel.profile))
-                                 )
+    stmt_user = await db.execute(
+        select(UserModel)
+        .where(UserModel.id == user_id)
+        .options(joinedload(UserModel.profile))
+    )
     user = stmt_user.scalars().first()
     if not user or not user.is_active:
         raise HTTPException(
