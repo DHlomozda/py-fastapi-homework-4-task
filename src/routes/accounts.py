@@ -7,7 +7,12 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from config import get_jwt_auth_manager, get_settings, BaseAppSettings, get_accounts_email_notificator
+from config import (
+    get_jwt_auth_manager,
+    get_settings,
+    BaseAppSettings,
+    get_accounts_email_notificator
+)
 from database import (
     get_db,
     UserModel,
@@ -129,10 +134,9 @@ async def register_user(
         await db.refresh(new_user)
         background_tasks.add_task(
             email_sender.send_activation_email,
-            new_user.email,
-            "http://127.0.0.1/accounts/login/",
+            str(user_data.email),
+            "http://127.0.0.1/accounts/activate/",
         )
-
     except SQLAlchemyError as e:
         await db.rollback()
         raise HTTPException(
@@ -140,13 +144,7 @@ async def register_user(
             detail="An error occurred during user creation."
         ) from e
     else:
-        login_link = f"http://127.0.0.1/accounts/activate/"
 
-        background_tasks.add_task(
-            email_sender.send_activation_email,
-            str(user_data.email),
-            login_link
-        )
         return UserRegistrationResponseSchema.model_validate(new_user)
 
 
@@ -244,8 +242,8 @@ async def activate_account(
     await db.delete(token_record)
     await db.commit()
     background_tasks.add_task(
-        email_sender.send_activation_email,
-        user.email,
+        email_sender.send_activation_complete_email,
+        str(activation_data.email),
         "http://127.0.0.1/accounts/activate/",
     )
 
@@ -302,7 +300,7 @@ async def request_password_reset_token(
     login_link = "http://127.0.0.1/accounts/password-reset/request/"
 
     background_tasks.add_task(
-        email_sender.send_password_reset_complete_email,
+        email_sender.send_password_reset_email,
         str(data.email),
         login_link
     )
