@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 from typing import cast
 
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, BackgroundTasks
+from pydantic import BaseModel
 from sqlalchemy import select, delete
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -67,7 +68,11 @@ router = APIRouter()
 )
 async def register_user(
         user_data: UserRegistrationRequestSchema,
+        background_tasks: BackgroundTasks,
         db: AsyncSession = Depends(get_db),
+        email_sender: EmailSenderInterface = Depends(
+        get_accounts_email_notificator
+            ),
 ) -> UserRegistrationResponseSchema:
     """
     Endpoint for user registration.
@@ -77,6 +82,8 @@ async def register_user(
     In case of any unexpected issues during the creation process, an HTTP 500 error is returned.
 
     Args:
+        email_sender (EmailSenderInterface)
+        background_tasks (BackgroundTasks)
         user_data (UserRegistrationRequestSchema): The registration details including email and password.
         db (AsyncSession): The asynchronous database session.
 
@@ -120,6 +127,7 @@ async def register_user(
 
         await db.commit()
         await db.refresh(new_user)
+
     except SQLAlchemyError as e:
         await db.rollback()
         raise HTTPException(
@@ -127,6 +135,13 @@ async def register_user(
             detail="An error occurred during user creation."
         ) from e
     else:
+        login_link = f"http://127.0.0.1/accounts/activate/"
+
+        background_tasks.add_task(
+            email_sender.send_activation_email,
+            str(user_data.email),
+            login_link
+        )
         return UserRegistrationResponseSchema.model_validate(new_user)
 
 
@@ -377,6 +392,9 @@ async def reset_password(
         )
 
     return MessageResponseSchema(message="Password reset successfully.")
+
+
+class FormData(BaseModel):
 
 
 @router.post(
