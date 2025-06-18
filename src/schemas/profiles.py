@@ -10,6 +10,7 @@ from validation import (
     validate_birth_date
 )
 
+
 class ProfileResponseSchema(BaseModel):
     id: int
     user_id: int
@@ -28,6 +29,7 @@ class ProfileCreateRequestSchema(BaseModel):
     date_of_birth: date
     info: str
     avatar: UploadFile
+
     @field_validator("first_name", "last_name")
     @classmethod
     def validate_name_field(cls, name: str, info) -> str:
@@ -44,6 +46,7 @@ class ProfileCreateRequestSchema(BaseModel):
                     "input": name
                 }]
             )
+
     @field_validator("avatar")
     @classmethod
     def validate_avatar_field(cls, avatar: UploadFile, info) -> UploadFile:
@@ -60,6 +63,7 @@ class ProfileCreateRequestSchema(BaseModel):
                     "input": avatar.filename
                 }]
             )
+
     @field_validator("gender")
     @classmethod
     def validate_gender_field(cls, gender: str, info) -> str:
@@ -76,6 +80,7 @@ class ProfileCreateRequestSchema(BaseModel):
                     "input": gender
                 }]
             )
+
     @field_validator("date_of_birth")
     @classmethod
     def validate_date_of_birth_field(cls, date_of_birth: date, info) -> date:
@@ -92,6 +97,7 @@ class ProfileCreateRequestSchema(BaseModel):
                     "input": str(date_of_birth)
                 }]
             )
+
     @field_validator("info")
     @classmethod
     def validate_info_field(cls, info: str, info_field) -> str:
