@@ -107,13 +107,3 @@ class ProfileCreateRequestSchema(BaseModel):
                 }]
             )
         return cleaned_info
-
-# Router.....
-# async def create_profile(
-#     user_id: int,
-#     profile_data: Annotated[ProfileCreateRequestSchema, Form()],
-#     db: AsyncSession = Depends(get_db),
-#     token: str = Depends(get_token),
-#     jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
-#     s3_client: S3StorageInterface = Depends(get_s3_storage_client),
-# ):
