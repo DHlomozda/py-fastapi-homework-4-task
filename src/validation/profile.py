@@ -18,6 +18,7 @@ def validate_image(avatar: UploadFile) -> None:
     max_file_size = 1 * 1024 * 1024
 
     if avatar.size > max_file_size:
+        avatar.file = BytesIO(b"")
         raise ValueError("Image size exceeds 1 MB")
 
     try:
