@@ -126,7 +126,6 @@ async def register_user(
 
         await db.commit()
         await db.refresh(new_user)
-        register_link = "http://127.0.0.1/accounts/register/"
 
         background_tasks.add_task(
             email_sender.send_activation_email,
